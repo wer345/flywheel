@@ -1,6 +1,11 @@
 #include <stdio.h>
+#include <iostream>
+
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_multimin.h>
+
+#include "Poly.h"
+// (x'y''-x''y')^2 = (x'^2+y'^2)^3 *{[(xe-2x)*Fy-(ye-2y)Fx)]/(2EI)}^2
 
      /* Paraboloid centered on (p[0],p[1]), with  
         scale factors (p[2],p[3]) and minimum p[4] */
@@ -18,9 +23,26 @@
                 p[3] * (y - p[1]) * (y - p[1]) + p[4]; 
      }
      
-        int 
-     main(void)
-     {
+ int main(void)
+{
+
+	Poly a= Poly(3);
+	Poly b= Poly(3);
+	a.m_c[0]=1;
+	b.m_c[1]=2;
+	a.m_c[2]=1;
+	b.m_c[2]=5;
+	cout<<"a=" << a.toString()<<endl;
+	cout<<"b=" << b.toString()<<endl;
+	Poly c=a+b;
+	cout<<"a+b=" << c.toString()<<endl;
+	c=a-b;
+	cout<<"a-b=" << c.toString()<<endl;
+	c=a*b;
+	cout<<"a*b=" << c.toString()<<endl;
+	c=b;
+	cout<<"c=" << c.toString()<<endl;
+
        double par[5] = {1.0, 2.0, 10.0, 20.0, 30.0};
      
        const gsl_multimin_fminimizer_type *T = 
