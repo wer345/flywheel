@@ -34,18 +34,42 @@
 	b.m_c[2]=5;
 	cout<<"a=" << a.toString()<<endl;
 	cout<<"b=" << b.toString()<<endl;
-	Poly c=a+b;
+	Poly c=b;
+	cout<<"c=" << c.toString()<<endl;
+	c=a+b;
 	cout<<"a+b=" << c.toString()<<endl;
 	c=a-b;
 	cout<<"a-b=" << c.toString()<<endl;
 	c=a*b;
 	cout<<"a*b=" << c.toString()<<endl;
-	c=b;
-	cout<<"c=" << c.toString()<<endl;
 
-       double par[5] = {1.0, 2.0, 10.0, 20.0, 30.0};
+	Poly d=c.derivative();
+	cout<<"d=derivative of c" << d.toString()<<endl;
+
+	Poly e=d.integral();
+	cout<<"e=integral of d" << e.toString()<<endl;
+
+	Poly xx= Poly(3);
+	xx.m_c[1]=1;
+	xx.m_c[2]=1;
+//	xx.m_c[3]=0;
+
+	Poly inv= xx.inverse(60);
+	cout<<"inv(x)" << inv.toString()<<endl;
+	double x0=-0.3;
+	double v1=1/(1+x0+x0*x0);
+	double v2=inv.value(x0);
+	cout<<"v1=" << v1<<"; v2=" << v2<<endl;
+
+
+
+	char in;
+	cin>>in;
+	exit(0);
+//==============================================
+    double par[5] = {1.0, 2.0, 10.0, 20.0, 30.0};
      
-       const gsl_multimin_fminimizer_type *T = 
+    const gsl_multimin_fminimizer_type *T = 
          gsl_multimin_fminimizer_nmsimplex;
        gsl_multimin_fminimizer *s = NULL;
        gsl_vector *ss, *x;
