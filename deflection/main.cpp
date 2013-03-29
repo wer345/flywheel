@@ -11,18 +11,32 @@
 
  double testfunc(double x)
  {
-	 return cos(x);
+//	 return cos(x);
+//	 return 1/(1+x);
+	 return sqrt(1+x);
+
  }
  
- int fit()
+ void outputPoly(FILE *f, int size,int idx,gsl_vector* data)
+ {
+	fprintf(f,"%10.8f",gsl_vector_get(data,idx));
+
+	if(idx+1<size)
+	{
+		fprintf(f,"+x*(");
+		outputPoly(f,size,idx+1,data);
+		fprintf(f,")");
+	}
+ }
+
+ int fit(int p)
      {
        int i, n;
        double xi, yi, ei, chisq;
        gsl_matrix *X, *cov;
        gsl_vector *y, *w, *c;
      
-       n = 9;
-	   int p=7;
+       n = 15;
      
        X = gsl_matrix_alloc (n, p);
        y = gsl_vector_alloc (n);
@@ -30,14 +44,20 @@
      
        c = gsl_vector_alloc (p);
        cov = gsl_matrix_alloc (p, p);
-     
+
+	   // range of x
+       double xs=-0.5;
+       double xe=0.5;
+
        for (i = 0; i < n; i++)
          {
-		   xi=3.1415926/4.0*i;
+//		   xi=3.1415926/4.0*i;
+			 double step=(xe-xs)/(n-1);
+			 xi=xs+step*i;
 			yi=testfunc(xi);
 			ei=0.01;
      
-           printf ("%g %g +/- %g\n", xi, yi, ei);
+           printf ("%6.3f %6.3f \n", xi, yi);
 
 		   double v=1.0;
 		   for(int j=0;j<p;j++) {
@@ -79,6 +99,21 @@
          printf ("\n# chisq = %g\n", chisq);
        }
      
+	   char fn[200];
+	   sprintf(fn,"..\\\\graph\\\\graph-p%d.plt",p);
+		FILE * f=fopen(fn,"w");
+		if(f!=NULL) {
+			fprintf(f,"set key left box\nset samples 150\n");
+			fprintf(f,"plot [%g:%g]",xs,xe);
+//			fprintf(f," 1000*(1/(1+x)-(");
+			fprintf(f," 1000*(sqrt(1+x)-(");
+			outputPoly(f,p,0,c);
+			fprintf(f," ))");
+
+			fprintf(f,"\n");
+			fclose(f);
+		}
+
        gsl_matrix_free (X);
        gsl_vector_free (y);
        gsl_vector_free (w);
@@ -151,8 +186,9 @@ void test_poly()
 {
 
 //	test_poly();
-	fit();
-	char ch=getchar();
+	for(int p=9;p<14;p++)
+	fit(p);
+//	char ch=getchar();
 //	char in;
 //	cin>>in;
 	exit(0);
