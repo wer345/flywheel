@@ -215,7 +215,11 @@ typedef struct _SwingData {
 	double F1,F2,F3,P1,P2;
 } SwingData;
 
-int eq_ex(SwingData &d)
+typedef struct _SwingVars {
+	double f1,f2,f3,ac1,ac2;
+} SwingVars;
+
+int swing_step(SwingData &d,SwingVars &vars)
 {
 	double a_data[] = { 
 		-sin(d.a1)/d.m1,	sin(d.a2)/d.m1,		-sin(d.a3)/d.m1,	-d.r1*cos(d.a1),	0,
@@ -243,7 +247,7 @@ int eq_ex(SwingData &d)
 	gsl_vector_view b = gsl_vector_view_array (b_data, 5);
 	gsl_vector *x = gsl_vector_alloc (5);
 	int s;
-
+/*
 	printf ("A=\n");
 	for(int i=0;i<5;i++)  {
 		for(int j=0;j<5;j++) {
@@ -255,20 +259,18 @@ int eq_ex(SwingData &d)
 	for(int j=0;j<5;j++) {
 		printf ("%d: %8.4f\n",j,gsl_vector_get(&b.vector,j));
 	}
-
+*/
 	gsl_permutation * p = gsl_permutation_alloc (5);
 	gsl_linalg_LU_decomp (&m.matrix, p, &s);
 	gsl_linalg_LU_solve (&m.matrix, p, &b.vector, x);
-	printf ("x = \n");
-	gsl_vector_fprintf (stdout, x, "%8.5f");
+	vars.f1=gsl_vector_get(x,0);
+	vars.f2=gsl_vector_get(x,1);
+	vars.f3=gsl_vector_get(x,2);
+	vars.ac1=gsl_vector_get(x,3);
+	vars.ac2=gsl_vector_get(x,4);
 
-	printf ("A=\n");
-	for(int i=0;i<5;i++) {
-		for(int j=0;j<5;j++) {
-			printf ("%8.4f, ",gsl_matrix_get(&m.matrix,i,j));
-		}
-		printf ("\n");
-	}
+//	printf ("x = \n");
+//	gsl_vector_fprintf (stdout, x, "%8.5f");
 
 	gsl_permutation_free (p);
 	gsl_vector_free (x);
@@ -286,9 +288,16 @@ int eq_ex(SwingData &d)
 
 //	swing();
 
-	double m1=1;
+	double m1=0.005;
 	double m2=0.01;
-	double m3=1;
+	double m3=0.015;
+	double dt=0.0005;
+	double rps=10; // round per second
+	double rspeed=2*3.141596*10; // angle speed
+	double g=9.8;
+	double r=0.3;
+	double gr=r*rspeed*rspeed;
+
 	SwingData d = {
 //	double a1,a2,a3,m1,m2,m3,s1,s2,s3;
 		0.0,0.0,0.0,
@@ -298,10 +307,29 @@ int eq_ex(SwingData &d)
 //	double r1,r2,r3;
 		0.005,0.01,0.05,
 //	double F1,F2,F3,P1,P2;
-		1,3,5,
-		m1,2*m2
+		gr*d.m1,gr*d.m2,gr*d.m3,
+		m1,m2
 	};
-	eq_ex(d);
+
+	SwingVars vars;
+
+	for(int i=0;i<300;i++) {
+		double t=i*dt;
+		d.a3=asin(d.r1*sin(d.a1)/d.r3);
+		d.s3=d.r1*d.a1*cos(d.a1)/(d.r3*cos(d.a3));
+		double r=cos(rspeed*t);
+		d.P1=g*d.m1*r;
+		d.P2=g*d.m2*r;
+		printf("P=(%5.2f, %5.2f) a=(%5.2f, %5.2f, %5.2f)  s=(%5.2f, %5.2f, %5.2f)  ",d.P1,d.P2, d.a1,d.a2,d.a3,d.s1,d.s2,d.s3);
+
+		swing_step(d,vars);
+		printf("f=(%6.4f, %6.4f, %6.4f)  ac=(%6.2f, %6.2f)\n",vars.f1,vars.f2,vars.f3,vars.ac1,vars.ac2);
+		d.a1+=d.s1*dt;
+		d.a2+=d.s2*dt;
+		d.s1+=vars.ac1*dt;
+		d.s2+=vars.ac2*dt;
+	}
+
 	char ch=getchar();
 //	char in;
 //	cin>>in;
