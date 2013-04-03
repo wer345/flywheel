@@ -6,6 +6,9 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_multifit.h>
+#include <gsl/gsl_cblas.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_linalg.h>
 
 #include "Poly.h"
 
@@ -182,13 +185,124 @@ void test_poly()
 	cout<<"v1=" << v1<<"; v2=" << v2<<endl;
 }
 
+//swing
+
+void swing()
+{
+	gsl_matrix_float * A = gsl_matrix_float_calloc(2,2);
+
+	gsl_matrix_float_set(A,0,0,2.0);
+	gsl_matrix_float_set(A,0,1,1.0);
+
+	gsl_matrix_float_set(A,1,0,1.0);
+	gsl_matrix_float_set(A,1,1,1.0);
+
+	gsl_vector_float * v=gsl_vector_float_calloc(2);
+	gsl_vector_float_set(v,0,10.0);
+	gsl_vector_float_set(v,1,20.0);
+
+	gsl_blas_strsv(CblasUpper,CblasNoTrans,CblasNonUnit,A,v);
+//	gsl_blas_strsv(CblasLower,CblasNoTrans,CblasNonUnit,A,v);
+
+	cout<<"v[0]="<<gsl_vector_float_get(v,0)<<"v[1]="<<gsl_vector_float_get(v,1)<<endl;
+}
+
+
+
+typedef struct _SwingData {
+	double a1,a2,a3,m1,m2,m3,s1,s2,s3;
+	double r1,r2,r3;
+	double F1,F2,F3,P1,P2;
+} SwingData;
+
+int eq_ex(SwingData &d)
+{
+	double a_data[] = { 
+		-sin(d.a1)/d.m1,	sin(d.a2)/d.m1,		-sin(d.a3)/d.m1,	-d.r1*cos(d.a1),	0,
+		-cos(d.a1)/d.m1,	-cos(d.a2)/d.m1,	cos(d.a3)/d.m1,		d.r1*sin(d.a1),		0,
+		0,					-sin(d.a2)/d.m2,	0,					-d.r1*cos(d.a1),	-d.r2*cos(d.a2),
+		0,					cos(d.a2)/d.m2,	0,						d.r1*sin(d.a1),		-d.r2*sin(d.a2),
+		0,					0,					-cos(d.a3)/d.m3,	d.r1*sin(d.a1),		d.r3*sin(d.a3),
+	};
+
+	double rss1s=d.r1*d.s1*d.s1*sin(d.a1);
+	double rss1c=d.r1*d.s1*d.s1*cos(d.a1);
+	double rss2s=d.r2*d.s2*d.s2*sin(d.a2);
+	double rss2c=d.r2*d.s2*d.s2*cos(d.a2);
+	double rss3c=d.r3*d.s3*d.s3*cos(d.a3);
+
+	double b_data[] = { 
+		-d.P1/d.m1-rss1s,
+		d.F1/d.m1-rss1c,
+		-d.P2/d.m2-rss1s+rss2c,
+		d.F2/d.m2-rss1c+rss2c,
+		-d.F3/d.m3-rss1c-rss3c
+	};
+
+	gsl_matrix_view m = gsl_matrix_view_array (a_data, 5, 5);
+	gsl_vector_view b = gsl_vector_view_array (b_data, 5);
+	gsl_vector *x = gsl_vector_alloc (5);
+	int s;
+
+	printf ("A=\n");
+	for(int i=0;i<5;i++)  {
+		for(int j=0;j<5;j++) {
+			printf ("%8.4f, ",gsl_matrix_get(&m.matrix,i,j));
+		}
+		printf ("\n");
+	}
+	printf ("b=\n");
+	for(int j=0;j<5;j++) {
+		printf ("%d: %8.4f\n",j,gsl_vector_get(&b.vector,j));
+	}
+
+	gsl_permutation * p = gsl_permutation_alloc (5);
+	gsl_linalg_LU_decomp (&m.matrix, p, &s);
+	gsl_linalg_LU_solve (&m.matrix, p, &b.vector, x);
+	printf ("x = \n");
+	gsl_vector_fprintf (stdout, x, "%8.5f");
+
+	printf ("A=\n");
+	for(int i=0;i<5;i++) {
+		for(int j=0;j<5;j++) {
+			printf ("%8.4f, ",gsl_matrix_get(&m.matrix,i,j));
+		}
+		printf ("\n");
+	}
+
+	gsl_permutation_free (p);
+	gsl_vector_free (x);
+
+	return 0;
+}
+
  int main(void)
 {
 
 //	test_poly();
-	for(int p=9;p<14;p++)
-	fit(p);
-//	char ch=getchar();
+
+//	for(int p=9;p<14;p++)
+//		fit(p);
+
+//	swing();
+
+	double m1=1;
+	double m2=0.01;
+	double m3=1;
+	SwingData d = {
+//	double a1,a2,a3,m1,m2,m3,s1,s2,s3;
+		0.0,0.0,0.0,
+		m1,m2,m3,
+		0.0,0.0,0.0,
+
+//	double r1,r2,r3;
+		0.005,0.01,0.05,
+//	double F1,F2,F3,P1,P2;
+		1,3,5,
+		m1,2*m2
+	};
+	eq_ex(d);
+	char ch=getchar();
 //	char in;
 //	cin>>in;
 	exit(0);
