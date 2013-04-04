@@ -221,6 +221,12 @@ typedef struct _SwingVars {
 
 int swing_step(SwingData &d,SwingVars &vars)
 {
+	double rss1s=d.r1*d.s1*d.s1*sin(d.a1);
+	double rss1c=d.r1*d.s1*d.s1*cos(d.a1);
+	double rss2s=d.r2*d.s2*d.s2*sin(d.a2);
+	double rss2c=d.r2*d.s2*d.s2*cos(d.a2);
+	double rss3c=d.r3*d.s3*d.s3*cos(d.a3);
+/*
 	double a_data[] = { 
 		-sin(d.a1)/d.m1,	sin(d.a2)/d.m1,		-sin(d.a3)/d.m1,	-d.r1*cos(d.a1),	0,
 		-cos(d.a1)/d.m1,	-cos(d.a2)/d.m1,	cos(d.a3)/d.m1,		d.r1*sin(d.a1),		0,
@@ -229,12 +235,6 @@ int swing_step(SwingData &d,SwingVars &vars)
 		0,					0,					-cos(d.a3)/d.m3,	d.r1*sin(d.a1),		d.r3*sin(d.a3),
 	};
 
-	double rss1s=d.r1*d.s1*d.s1*sin(d.a1);
-	double rss1c=d.r1*d.s1*d.s1*cos(d.a1);
-	double rss2s=d.r2*d.s2*d.s2*sin(d.a2);
-	double rss2c=d.r2*d.s2*d.s2*cos(d.a2);
-	double rss3c=d.r3*d.s3*d.s3*cos(d.a3);
-
 	double b_data[] = { 
 		-d.P1/d.m1-rss1s,
 		d.F1/d.m1-rss1c,
@@ -242,6 +242,25 @@ int swing_step(SwingData &d,SwingVars &vars)
 		d.F2/d.m2-rss1c+rss2c,
 		-d.F3/d.m3-rss1c-rss3c
 	};
+*/
+	double res=60.0;
+
+	double a_data[] = { 
+		sin(d.a1)/d.m1,	-sin(d.a2)/d.m1,	sin(d.a3)/d.m1,		d.r1*cos(d.a1),		0,
+		cos(d.a1)/d.m1,	cos(d.a2)/d.m1,		-cos(d.a3)/d.m1,	-d.r1*sin(d.a1),	0,
+		0,				sin(d.a2)/d.m2,		0,					d.r1*cos(d.a1),		d.r2*cos(d.a2),
+		0,				-cos(d.a2)/d.m2,	0,					-d.r1*sin(d.a1),	d.r2*sin(d.a2),
+		0,				0,					-cos(d.a3)/d.m3,	d.r1*sin(d.a1),		d.r3*sin(d.a3),
+	};
+
+	double b_data[] = { 
+		d.P1/d.m1-rss1s,
+		-d.F1/d.m1-rss1c,
+		d.P2/d.m2-rss1s-rss2s-res*(d.r1*d.s1*cos(d.a1)+d.r2*d.s2*cos(d.a2)),
+		-d.F2/d.m2-rss1c+rss2c,
+		-d.F3/d.m3-rss1c-rss3c
+	};
+
 
 	gsl_matrix_view m = gsl_matrix_view_array (a_data, 5, 5);
 	gsl_vector_view b = gsl_vector_view_array (b_data, 5);
@@ -290,12 +309,12 @@ int swing_step(SwingData &d,SwingVars &vars)
 
 	double m1=0.005;
 	double m2=0.01;
-	double m3=0.015;
-	double dt=0.0005;
+	double m3=0.018;
+	double dt=0.0001;
 	double rps=10; // round per second
 	double rspeed=2*3.141596*10; // angle speed
 	double g=9.8;
-	double r=0.3;
+	double r=0.1;
 	double gr=r*rspeed*rspeed;
 
 	SwingData d = {
@@ -305,7 +324,7 @@ int swing_step(SwingData &d,SwingVars &vars)
 		0.0,0.0,0.0,
 
 //	double r1,r2,r3;
-		0.005,0.01,0.05,
+		0.008,0.01,0.05,
 //	double F1,F2,F3,P1,P2;
 		gr*d.m1,gr*d.m2,gr*d.m3,
 		m1,m2
@@ -313,23 +332,30 @@ int swing_step(SwingData &d,SwingVars &vars)
 
 	SwingVars vars;
 
-	for(int i=0;i<300;i++) {
+	char fn[200];
+	sprintf(fn,"..\\\\graph\\\\data\\\\swing.dat");
+	FILE * f=fopen(fn,"w");
+
+	for(int i=0;i<20000;i++) {
 		double t=i*dt;
 		d.a3=asin(d.r1*sin(d.a1)/d.r3);
 		d.s3=d.r1*d.a1*cos(d.a1)/(d.r3*cos(d.a3));
 		double r=cos(rspeed*t);
 		d.P1=g*d.m1*r;
 		d.P2=g*d.m2*r;
-		printf("P=(%5.2f, %5.2f) a=(%5.2f, %5.2f, %5.2f)  s=(%5.2f, %5.2f, %5.2f)  ",d.P1,d.P2, d.a1,d.a2,d.a3,d.s1,d.s2,d.s3);
-
+		printf("%3d: P=(%5.3f, %5.3f) a=(%5.3f, %5.3f, %5.3f)  s=(%5.2f, %5.2f, %5.2f)  ",i,d.P1,d.P2, d.a1,d.a2,d.a3,d.s1,d.s2,d.s3);
+		// print P1, P2, a1, a2, s1,s1, ac1, ac2
+		fprintf(f,"%3d %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f ",i,d.P1,d.P2, d.a1,d.a2, d.s1,d.s2 );
 		swing_step(d,vars);
 		printf("f=(%6.4f, %6.4f, %6.4f)  ac=(%6.2f, %6.2f)\n",vars.f1,vars.f2,vars.f3,vars.ac1,vars.ac2);
+		fprintf(f,"  %8.5f %8.5f\n",vars.ac1,vars.ac2);
 		d.a1+=d.s1*dt;
 		d.a2+=d.s2*dt;
 		d.s1+=vars.ac1*dt;
 		d.s2+=vars.ac2*dt;
 	}
 
+	fclose(f);
 	char ch=getchar();
 //	char in;
 //	cin>>in;
