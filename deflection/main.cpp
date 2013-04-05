@@ -251,7 +251,7 @@ int swing_step(SwingData &d,SwingVars &vars)
 	};
 */
 	double h1=0.5;
-	double h2=0.05;
+	double h2=0.5;
 
 	double a_data[] = { 
 		sin(d.a1)/d.m1,	-sin(d.a2)/d.m1,		sin(d.a3)/d.m1,		d.r1*cos(d.a1),		0,
@@ -317,14 +317,14 @@ int swing_step(SwingData &d,SwingVars &vars)
 
 //	swing();
 
-	double m1=0.01;
+	double m1=0.003;
 	double m2=0.01;
-	double m3=0.05;
+	double m3=0.03;
 	double dt=0.0001;
-	double rps=5; // round per second
-	double rspeed=2*3.141596*10; // angle speed
+	double rps=10; // round per second
+	double rspeed=2*3.141596*rps; // angle speed
 	double g=9.8;
-	double r=0.1;
+	double r=0.05;
 	double gr=r*rspeed*rspeed;
 	SwingData d = {
 //	double a1,a2,a3,m1,m2,m3,s1,s2,s3;
@@ -333,27 +333,27 @@ int swing_step(SwingData &d,SwingVars &vars)
 		0.0,0.0,0.0,
 
 //	double r1,r2,r3;
-		0.008,0.01,0.05,
+		0.01,0.01,0.05,
 //	double F1,F2,F3,P1,P2;
 		gr*m1,gr*m2,gr*m3,
 //		1.0, 1.0, 1.0,
 		g*m1,g*m2,
 		0.0,0.0
 	};
-	d.s1=-1.0;
-	d.s2=1;
+//	d.s1=1.0;
+//	d.s2=1;
 	SwingVars vars;
 
 	char fn[200];
 	sprintf(fn,"..\\\\graph\\\\data\\\\swing.dat");
 	FILE * f=fopen(fn,"w");
 
-	for(int i=0;i<20000;i++) {
+	for(int i=0;i<10000;i++) {
 		double t=i*dt;
-		double r=sin(rspeed*t);
-		if(i<0) {
-			d.P1=g*d.m1*r;
-			d.P2=g*d.m2*r;
+		double rate=sin(1.0*rspeed*t);
+		if(i<5000) {
+			d.P1=g*d.m1*rate;
+			d.P2=g*d.m2*rate;
 		}
 		else {
 			d.P1=0;
